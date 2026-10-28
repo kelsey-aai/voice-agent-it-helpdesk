@@ -1,19 +1,9 @@
-# integrations.py
-#
-# The KB and ITSM integrations. These are MOCK, in-memory implementations so
-# you can clone the repo and hear the agent work end to end without standing up
-# ServiceNow / Jira Service Management / Zendesk first.
-#
-# Each function has the exact signature the tool loop expects:
-#   kb_search(query, category)      -> dict
-#   itsm_create_ticket(args)        -> dict
-#   itsm_get_ticket(ticket_id)      -> dict
-#
-# When you're ready to wire a real backend, swap the mock body for the
-# production `httpx` version shown at the bottom of this file. The shape of the
-# returned dicts is what the agent reads, so keep those keys the same.
-
+# integrations.py: MOCK, in-memory knowledge base and ITSM, so the agent runs
+# end to end before you wire up ServiceNow, Jira Service Management, or Zendesk.
+# Swap each body for a real API call and keep the returned keys the same:
+# the LLM reads these dicts as tool results.
 import itertools
+from typing import Dict, Optional
 
 # ── Mock knowledge base ──────────────────────────────────────────────────────
 # A tiny runbook keyed by category. A real KB call returns ranked snippets; the
@@ -72,7 +62,7 @@ _KB = {
 }
 
 
-async def kb_search(query: str, category: str | None = None) -> dict:
+async def kb_search(query: str, category: Optional[str] = None) -> dict:
     """Return grounded snippets. The agent answers only from these."""
     if category and category in _KB:
         hits = _KB[category]
@@ -98,7 +88,7 @@ async def kb_search(query: str, category: str | None = None) -> dict:
 # "what's the status of my ticket" works in a demo. Real ITSM numbers are
 # server-generated; we mimic the ServiceNow `INC` format here.
 _ticket_counter = itertools.count(20001)
-_TICKETS: dict[str, dict] = {
+_TICKETS: Dict[str, dict] = {
     "INC0019001": {
         "number": "INC0019001",
         "state": "in_progress",
@@ -156,7 +146,7 @@ async def itsm_get_ticket(ticket_id: str) -> dict:
 # ITSM_TOKEN = os.environ["ITSM_TOKEN"]
 #
 #
-# async def kb_search(query: str, category: str | None = None) -> dict:
+# async def kb_search(query: str, category: Optional[str] = None) -> dict:
 #     async with httpx.AsyncClient(timeout=10) as http:
 #         resp = await http.get(KB_URL, params={"q": query, "category": category, "top": 3})
 #         resp.raise_for_status()
